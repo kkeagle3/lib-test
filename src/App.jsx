@@ -8,8 +8,16 @@ function App() {
   const [scores, setScores] = useState({ SILENT: 0, AMBIENT: 0, APPLE: 0, MARKER: 0, ALCHEMIST: 0, TOURIST: 0 });
   const [finalResult, setFinalResult] = useState(null);
 
-  const handleAnswer = (type, weight) => {
-    setScores(prev => ({ ...prev, [type]: prev[type] + weight }));
+  const handleAnswer = (weights) => {
+    setScores(prev => {
+      const newScores = { ...prev };
+      // 선택지에 정의된 모든 가중치를 기존 점수에 더함
+      Object.keys(weights).forEach(type => {
+        newScores[type] += weights[type];
+      });
+      return newScores;
+    });
+
     if (currentIdx < QUESTIONS.length - 1) {
       setCurrentIdx(currentIdx + 1);
     } else {
