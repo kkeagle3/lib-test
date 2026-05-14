@@ -17,12 +17,18 @@ function App() {
     }
   };
 
+  // useEffect 내부 로직만 교체
   useEffect(() => {
     if (stage === 'loading') {
       const timer = setTimeout(() => {
         const maxScore = Math.max(...Object.values(scores));
         const candidates = Object.keys(scores).filter(key => scores[key] === maxScore);
-        const picked = candidates[Math.floor(Math.random() * candidates.length)];
+        
+        // 동점 시 우선순위: TOURIST > APPLE > MARKER > ALCHEMIST > AMBIENT > SILENT
+        // 공부 괴물(SILENT)은 가장 엄격한 기준을 적용하기 위해 뒤로 배치
+        const priority = ["TOURIST", "APPLE", "MARKER", "ALCHEMIST", "AMBIENT", "SILENT"];
+        const picked = candidates.sort((a, b) => priority.indexOf(a) - priority.indexOf(b))[0];
+        
         setFinalResult(picked);
         setStage('result');
       }, 2500);
