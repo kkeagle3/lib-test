@@ -5,27 +5,44 @@ import { QUESTIONS, RESULTS } from './data';
 function App() {
   const [stage, setStage] = useState('landing');
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [scores, setScores] = useState({ SILENT: 0, AMBIENT: 0, APPLE: 0, MARKER: 0, ALCHEMIST: 0, TOURIST: 0 });
+  const [scores, setScores] = useState({ 
+    SILENT: 0, 
+    AMBIENT: 0, 
+    APPLE: 0, 
+    MARKER: 0, 
+    ALCHEMIST: 0, 
+    TOURIST: 0 
+  });
   const [finalResult, setFinalResult] = useState(null);
 
+  // 답변 핸들러: weights 객체를 안전하게 처리
   const handleAnswer = (weights) => {
+    // 1. 데이터가 들어오는지 검증
+    if (!weights || typeof weights !== 'object') {
+      console.error("오류: weights 데이터가 객체 형식이 아닙니다.", weights);
+      return;
+    }
+
+    // 2. 점수 합산 로직
     setScores(prev => {
-      const newScores = { ...prev };
-      // 선택지에 정의된 모든 가중치를 기존 점수에 더함
-      Object.keys(weights).forEach(type => {
-        newScores[type] += weights[type];
+      const updated = { ...prev };
+      Object.entries(weights).forEach(([type, value]) => {
+        if (updated.hasOwnProperty(type)) {
+          updated[type] += value;
+        }
       });
-      return newScores;
+      return updated;
     });
 
+    // 3. 페이지 전환 로직 (함수형 업데이트로 더 안전하게 관리)
     if (currentIdx < QUESTIONS.length - 1) {
-      setCurrentIdx(currentIdx + 1);
+      setCurrentIdx(prev => prev + 1);
     } else {
       setStage('loading');
     }
   };
 
-  // useEffect 내부 로직만 교체
+  // 결과 로딩 및 동점 처리 로직
   useEffect(() => {
     if (stage === 'loading') {
       const timer = setTimeout(() => {
@@ -33,7 +50,6 @@ function App() {
         const candidates = Object.keys(scores).filter(key => scores[key] === maxScore);
         
         // 동점 시 우선순위: TOURIST > APPLE > MARKER > ALCHEMIST > AMBIENT > SILENT
-        // 공부 괴물(SILENT)은 가장 엄격한 기준을 적용하기 위해 뒤로 배치
         const priority = ["TOURIST", "APPLE", "MARKER", "ALCHEMIST", "AMBIENT", "SILENT"];
         const picked = candidates.sort((a, b) => priority.indexOf(a) - priority.indexOf(b))[0];
         
@@ -115,15 +131,15 @@ function App() {
               />
             </div>
 
-            <h2 className="text-2xl font-bold mb-10 text-slate-800 text-center break-keep">
+            <h2 className="text-2xl font-bold mb-10 text-slate-800 text-center break-keep whitespace-pre-line">
               {QUESTIONS[currentIdx].text}
             </h2>
             
             <div className="space-y-3">
               {QUESTIONS[currentIdx].options.map((opt, i) => (
                 <button 
-                  key={i} 
-                  onClick={() => handleAnswer(opt.type, opt.weight)} 
+                  key={`${currentIdx}-${i}`} 
+                  onClick={() => handleAnswer(opt.weights)} 
                   className="w-full p-5 text-left bg-white border-2 border-slate-50 rounded-2xl font-semibold shadow-sm hover:border-[#ff6b6b] hover:bg-[#fff9f9] transition-all active:scale-95 text-slate-700"
                 >
                   {opt.text}
@@ -151,7 +167,7 @@ function App() {
           >
             <div className="relative mb-6">
               <img 
-                src={RESULTS[finalResult].img} 
+                src={RESULTS[finalResult].img || "https://via.placeholder.com/200?text=Kbeugi"} 
                 alt={RESULTS[finalResult].name}
                 className="w-48 h-48 mx-auto object-contain drop-shadow-xl"
                 onError={(e) => { e.target.src = "https://via.placeholder.com/200?text=Kbeugi"; }}
