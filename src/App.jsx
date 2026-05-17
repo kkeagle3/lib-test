@@ -15,15 +15,15 @@ function App() {
   });
   const [finalResult, setFinalResult] = useState(null);
 
-  // 답변 핸들러: weights 객체를 안전하게 처리
   const handleAnswer = (weights) => {
-    // 1. 데이터가 들어오는지 검증
-    if (!weights || typeof weights !== 'object') {
-      console.error("오류: weights 데이터가 객체 형식이 아닙니다.", weights);
+    if (!weights) {
+      console.error("데이터 오류: weights가 정의되지 않았습니다. data.js를 확인하세요.");
+      if (currentIdx < QUESTIONS.length - 1) {
+        setCurrentIdx(prev => prev + 1);
+      }
       return;
     }
 
-    // 2. 점수 합산 로직
     setScores(prev => {
       const updated = { ...prev };
       Object.entries(weights).forEach(([type, value]) => {
@@ -34,7 +34,6 @@ function App() {
       return updated;
     });
 
-    // 3. 페이지 전환 로직 (함수형 업데이트로 더 안전하게 관리)
     if (currentIdx < QUESTIONS.length - 1) {
       setCurrentIdx(prev => prev + 1);
     } else {
@@ -42,14 +41,12 @@ function App() {
     }
   };
 
-  // 결과 로딩 및 동점 처리 로직
   useEffect(() => {
     if (stage === 'loading') {
       const timer = setTimeout(() => {
         const maxScore = Math.max(...Object.values(scores));
         const candidates = Object.keys(scores).filter(key => scores[key] === maxScore);
         
-        // 동점 시 우선순위: TOURIST > APPLE > MARKER > ALCHEMIST > AMBIENT > SILENT
         const priority = ["TOURIST", "APPLE", "MARKER", "ALCHEMIST", "AMBIENT", "SILENT"];
         const picked = candidates.sort((a, b) => priority.indexOf(a) - priority.indexOf(b))[0];
         
@@ -60,16 +57,34 @@ function App() {
     }
   }, [stage, scores]);
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    alert("테스트 링크가 복사되었습니다!");
+  const copyImageToClipboard = async () => {
+    const imgUrl = RESULTS[finalResult]?.img;
+    if (!imgUrl) {
+      alert("복사할 이미지 경로가 없습니다.");
+      return;
+    }
+
+    try {
+      const response = await fetch(imgUrl);
+      const blob = await response.blob();
+
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          [blob.type]: blob
+        })
+      ]);
+      alert("결과 이미지가 클립보드에 복사되었습니다!\n원하는 곳에 바로 붙여넣기(Ctrl+V) 하세요.");
+    } catch (err) {
+      console.error("이미지 복사 실패:", err);
+      alert("이미지 복사를 지원하지 않는 브라우저입니다.\n이미지를 꾹 누르거나 우클릭하여 '이미지 복사'를 이용해 주세요.");
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#fcfcfc] flex items-center justify-center p-4 font-sans text-slate-900">
+      {/* 이 부분의 오타를 AnimatePresence로 정상 수정했습니다 */}
       <AnimatePresence mode="wait">
         
-        {/* 1. 시작 페이지 */}
         {stage === 'landing' && (
           <motion.div 
             key="landing" 
@@ -90,29 +105,23 @@ function App() {
                 }}
               />
             </div>
-
             <h1 className="text-4xl font-black mb-4 tracking-tighter text-slate-800">나의 크부기 찾기</h1>
             <p className="text-slate-500 mb-10 font-medium">나의 도서관 성향은 어떨까?</p>
-            
             <button 
               onClick={() => setStage('quiz')} 
               className="bg-[#ff6b6b] text-white px-14 py-5 rounded-3xl font-black text-xl shadow-lg shadow-red-100 hover:brightness-105 transition-all active:scale-95 w-full max-w-[280px]"
             >
               테스트 시작하기
             </button>
-
             <footer className="mt-16">
-              <p className="text-sm font-bold text-slate-400 tracking-widest">
-                제38기 도서관학생위원회
-              </p>
+              <p className="text-sm font-bold text-slate-400 tracking-widest">제38기 도서관학생위원회</p>
             </footer>
           </motion.div>
         )}
 
-        {/* 2. 질문 페이지 */}
         {stage === 'quiz' && (
           <motion.div 
-            key="quiz" 
+            key={`quiz-${currentIdx}`} 
             initial={{ opacity: 0, x: 50 }} 
             animate={{ opacity: 1, x: 0 }} 
             exit={{ opacity: 0, x: -50 }} 
@@ -121,7 +130,6 @@ function App() {
             <div className="text-center font-black text-2xl text-[#ff6b6b] mb-2">
               {currentIdx + 1} / {QUESTIONS.length}
             </div>
-            
             <div className="w-full h-1.5 bg-slate-100 rounded-full mb-10 overflow-hidden">
               <motion.div 
                 className="h-full bg-[#ff6b6b]" 
@@ -130,13 +138,11 @@ function App() {
                 transition={{ duration: 0.3 }}
               />
             </div>
-
             <h2 className="text-2xl font-bold mb-10 text-slate-800 text-center break-keep whitespace-pre-line">
-              {QUESTIONS[currentIdx].text}
+              {QUESTIONS[currentIdx]?.text || "질문을 불러올 수 없습니다."}
             </h2>
-            
             <div className="space-y-3">
-              {QUESTIONS[currentIdx].options.map((opt, i) => (
+              {QUESTIONS[currentIdx]?.options.map((opt, i) => (
                 <button 
                   key={`${currentIdx}-${i}`} 
                   onClick={() => handleAnswer(opt.weights)} 
@@ -149,7 +155,6 @@ function App() {
           </motion.div>
         )}
 
-        {/* 3. 로딩 페이지 */}
         {stage === 'loading' && (
           <motion.div key="loading" className="text-center">
             <div className="w-16 h-16 border-4 border-[#ff6b6b] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
@@ -157,55 +162,53 @@ function App() {
           </motion.div>
         )}
 
-        {/* 4. 결과 페이지 */}
         {stage === 'result' && finalResult && (
           <motion.div 
             key="result" 
             initial={{ opacity: 0, scale: 0.9 }} 
             animate={{ opacity: 1, scale: 1 }} 
-            className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-8 text-center" 
+            className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-5 text-center flex flex-col" 
           >
-            <div className="relative mb-6">
+            <div className="w-full rounded-2xl overflow-hidden mb-5 bg-slate-50 shadow-md border border-slate-100">
               <img 
-                src={RESULTS[finalResult].img || "https://via.placeholder.com/200?text=Kbeugi"} 
-                alt={RESULTS[finalResult].name}
-                className="w-48 h-48 mx-auto object-contain drop-shadow-xl"
-                onError={(e) => { e.target.src = "https://via.placeholder.com/200?text=Kbeugi"; }}
+                src={RESULTS[finalResult]?.img || "https://via.placeholder.com/400?text=Kbeugi"} 
+                alt={RESULTS[finalResult]?.name}
+                className="w-full h-auto block"
+                onError={(e) => { 
+                  e.target.style.display = 'none';
+                  e.target.parentNode.innerHTML = `<div class="w-full aspect-square flex flex-col items-center justify-center text-slate-400 font-bold bg-slate-100 gap-2"><span class="text-6xl">${RESULTS[finalResult]?.emoji || '🐢'}</span>${RESULTS[finalResult]?.name} 이미지를 찾을 수 없습니다.</div>`;
+                }}
               />
             </div>
-
-            <p className="text-[#ff6b6b] font-black text-sm tracking-widest mb-1 uppercase">Your DNA Type</p>
-            <h1 className="text-3xl font-black mb-6 text-slate-800">{RESULTS[finalResult].name}</h1>
-
-            <div className="bg-slate-50 p-6 rounded-3xl mb-6 text-slate-600 leading-relaxed text-sm font-medium text-left whitespace-pre-line">
-              {RESULTS[finalResult].desc}
-            </div>
-
-            <div className="bg-[#fff9f9] border border-[#ff6b6b]/10 p-4 rounded-2xl mb-6 text-left">
+            
+            <div className="bg-[#fff9f9] border border-[#ff6b6b]/10 p-4 rounded-xl mb-4 text-left">
               <p className="text-[#ff6b6b] text-xs font-black mb-1">📍 추천 공부 장소</p>
-              <p className="text-slate-700 font-bold text-base">{RESULTS[finalResult].place}</p>
+              <p className="text-slate-700 font-bold text-base">{RESULTS[finalResult]?.place}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-center">
-                <p className="text-blue-500 text-xs font-black mb-2 uppercase">Best Match</p>
-                <p className="text-slate-700 text-base font-bold leading-tight break-keep">
-                  {RESULTS[RESULTS[finalResult].best].emoji} {RESULTS[RESULTS[finalResult].best].name}
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100/50 text-center">
+                <p className="text-blue-500 text-[10px] font-black mb-1 uppercase">Best Match</p>
+                <p className="text-slate-700 text-sm font-bold truncate">
+                  {RESULTS[RESULTS[finalResult]?.best]?.emoji} {RESULTS[RESULTS[finalResult]?.best]?.name}
                 </p>
               </div>
-              <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-center">
-                <p className="text-red-500 text-xs font-black mb-2 uppercase">Worst Match</p>
-                <p className="text-slate-700 text-base font-bold leading-tight break-keep">
-                  {RESULTS[RESULTS[finalResult].worst].emoji} {RESULTS[RESULTS[finalResult].worst].name}
+              <div className="bg-red-50/50 p-3 rounded-xl border border-red-100/50 text-center">
+                <p className="text-red-500 text-[10px] font-black mb-1 uppercase">Worst Match</p>
+                <p className="text-slate-700 text-sm font-bold truncate">
+                  {RESULTS[RESULTS[finalResult]?.worst]?.emoji} {RESULTS[RESULTS[finalResult]?.worst]?.name}
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <button onClick={copyLink} className="w-full py-4 bg-[#ff6b6b] text-white rounded-2xl font-bold shadow-lg hover:brightness-105 active:scale-95 transition-all text-lg">
-                결과 링크 복사하기
+            <div className="flex flex-col gap-2.5 mt-auto">
+              <button 
+                onClick={copyImageToClipboard} 
+                className="w-full py-4 bg-[#ff6b6b] text-white rounded-xl font-bold shadow-md hover:brightness-105 active:scale-95 transition-all text-base"
+              >
+                결과 이미지 복사하기
               </button>
-              <button onClick={() => window.location.reload()} className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-bold hover:bg-slate-200 active:scale-95 transition-all">
+              <button onClick={() => window.location.reload()} className="w-full py-3 bg-slate-100 text-slate-500 rounded-xl font-bold hover:bg-slate-200 active:scale-95 transition-all text-sm">
                 테스트 다시 하기
               </button>
             </div>

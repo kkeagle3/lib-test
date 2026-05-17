@@ -34,7 +34,8 @@ export const RESULTS = {
   ALCHEMIST: { 
     name: "호반우 옆 올빼미", 
     desc: "모두가 떠난 뒤에도 도서관의 불을 밝히는 진정한 생존형 공부러입니다!\n평소엔 여유롭다가도 시험 기간만 되면 초인적인 힘을 발휘해 지식을 뇌에 연성해 넣습니다. 카페인과 에너지 드링크로 생명력을 치환하며, 마감 직전의 스릴을 즐기는 벼락치기의 달인입니다.",
-    emoji: "🧪",
+    emoji: "🦉",
+    img: "/images/kbg_owl.png",
     place: "중앙도서관 신관 지하 1층 제 1열람실",
     best: "SILENT",
     worst: "APPLE"
