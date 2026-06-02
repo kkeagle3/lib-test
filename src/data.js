@@ -3,6 +3,7 @@ export const RESULTS = {
     name: "공부 괴물", 
     desc: "도서관에 앉는 순간 주변의 시공간이 멈추는 분이시군요!\n한 번 자리를 잡으면 엉덩이를 떼지 않는 무서운 집중력의 소유자입니다. 숨소리조차 조심스러운 정적 속에서 최고의 효율을 발휘하며, 계획한 분량을 끝내기 전까지는 절대 일어나지 않는 도서관의 터줏대감입니다.", 
     emoji: "🗿",
+    img: "images/kbg_focus.png",
     place: "중앙도서관 신관 3층 제 3열람실",
     best: "ALCHEMIST",
     worst: "MARKER"
@@ -11,6 +12,7 @@ export const RESULTS = {
     name: "도서관 엠비언트 중독", 
     desc: "너무 적막한 곳보다는 적당한 백색소음이 있어야 뇌가 깨어나는 타입입니다!\n남들이 공부하는 모습이 시야에 들어와야 적당한 긴장감을 유지하며 집중력이 상승합니다. 노트북 타이핑 소리와 책장 넘기는 소리가 어우러진 오픈 테이블이 당신의 주 무대입니다.",
     emoji: "🎧",
+    img: "images/kbg_cafe.png",
     place: "중앙도서관 신관 1층 카페",    
     best: "APPLE",
     worst: "SILENT"
@@ -19,6 +21,7 @@ export const RESULTS = {
     name: "경대 보부상", 
     desc: "공부는 장비빨! 노트북, 태블릿, 독서대까지... 가방 무게가 곧 당신의 열정입니다.\n자리에 앉자마자 콘센트 위치부터 확인하고 완벽하게 세팅을 마쳐야 비로소 공부를 시작할 마음이 생깁니다. 모든 기기의 배터리가 100%일 때 가장 마음이 편안해집니다.",    
     emoji: "🍎",
+    img: "images/kbg_zimcarry.png",
     place: "중앙도서관 신관 2층 제 2열람실",    
     best: "AMBIENT",
     worst: "TOURIST"
@@ -27,6 +30,7 @@ export const RESULTS = {
     name: "스터디 협업러", 
     desc: "혼자 하는 공부보다 '함께'의 힘을 믿는 분이시군요!\n친구와 모르는 것을 서로 설명해 주거나, 스터디원들과 나란히 앉아 있을 때 시너지가 폭발합니다. 말을 하면서 지식을 정리하는 것을 선호하며, 서로를 자극하는 건강한 경쟁을 즐기는 타입입니다.",
     emoji: "🖍️",
+    img: "/images/kbg_studywithkbg.png",
     place: "중앙도서관 신관 1층 스터디룸",
     best: "TOURIST",
     worst: "SILENT"
