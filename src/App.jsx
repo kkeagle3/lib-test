@@ -16,7 +16,7 @@ const pageTransition = {
 function App() {
   const [stage, setStage] = useState('landing');
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false); // 물리적인 연타 방지 플래그
+  const [isSubmitting, setIsSubmitting] = useState(false); // 잠금 플래그
   const [scores, setScores] = useState({ 
     SILENT: 0, 
     AMBIENT: 0, 
@@ -28,9 +28,9 @@ function App() {
   const [finalResult, setFinalResult] = useState(null);
 
   const handleAnswer = (weights) => {
-    // 1. 이미 클릭 처리 중이거나 로딩 상태로 넘어가는 중이라면 무조건 즉시 차단
+    // 이미 클릭했거나 퀴즈 단계가 아니라면 즉시 완전 차단
     if (isSubmitting || stage !== 'quiz') return;
-    setIsSubmitting(true);
+    setIsSubmitting(true); // 락(Lock) 발동
 
     if (!weights) {
       console.error("데이터 오류: weights가 정의되지 않았습니다.");
@@ -38,7 +38,6 @@ function App() {
       return;
     }
 
-    // 2. 점수 안전하게 합산
     setScores(prev => {
       const updated = { ...prev };
       Object.entries(weights).forEach(([type, value]) => {
@@ -49,44 +48,47 @@ function App() {
       return updated;
     });
 
-    // 3. 인덱스 경계값에 대한 절대적 검증 (이 부분이 구멍을 막는 핵심입니다)
     const nextIdx = currentIdx + 1;
-    
     if (nextIdx < QUESTIONS.length) {
-      // 다음 문항이 확실히 존재할 때만 인덱스를 안전하게 1 올림
       setCurrentIdx(nextIdx);
     } else {
-      // 모든 문항이 끝났다면 인덱스를 절대 올리지 않고 스테이지만 로딩으로 전환
       setStage('loading');
     }
   };
 
-  // 문항(currentIdx)이 실제로 갱신이 완료되어 화면 렌더링이 보장되면 그때 클릭 잠금을 해제
-  useEffect(() => {
-    if (stage === 'quiz') {
-      setIsSubmitting(false);
-    }
-  }, [currentIdx, stage]);
+  // 웅덩이가 생기던 구형 useEffect 잠금 해제 코드는 데드락의 원인이므로 완전히 제거했습니다.
 
   useEffect(() => {
     if (stage === 'loading') {
       const timer = setTimeout(() => {
-        const maxScore = Math.max(...Object.values(scores));
-        const candidates = Object.keys(scores).filter(key => scores[key] === maxScore);
-        
-        const priority = ["TOURIST", "APPLE", "MARKER", "ALCHEMIST", "AMBIENT", "SILENT"];
-        const picked = candidates.sort((a, b) => priority.indexOf(a) - priority.indexOf(b))[0];
-        
-        setFinalResult(picked);
-        setStage('result');
-        setIsSubmitting(false);
+        try {
+          const maxScore = Math.max(...Object.values(scores));
+          const candidates = Object.keys(scores).filter(key => scores[key] === maxScore);
+          
+          const priority = ["TOURIST", "APPLE", "MARKER", "ALCHEMIST", "AMBIENT", "SILENT"];
+          let picked = candidates.sort((a, b) => priority.indexOf(a) - priority.indexOf(b))[0];
+          
+          if (!picked || !RESULTS[picked]) {
+            picked = "TOURIST";
+          }
+          
+          setFinalResult(picked);
+          setStage('result');
+        } catch (error) {
+          console.error("결과 처리 중 에러 발생:", error);
+          setFinalResult("TOURIST");
+          setStage('result');
+        } finally {
+          setIsSubmitting(false);
+        }
       }, 2500);
       return () => clearTimeout(timer);
     }
   }, [stage, scores]);
 
   const copyImageToClipboard = async () => {
-    const imgUrl = RESULTS[finalResult]?.img;
+    const currentType = finalResult || "TOURIST";
+    const imgUrl = RESULTS[currentType]?.img;
     if (!imgUrl) {
       alert("복사할 이미지 경로가 없습니다.");
       return;
@@ -107,6 +109,10 @@ function App() {
       alert("이미지 복사를 지원하지 않는 브라우저입니다.\n이미지를 꾹 누르거나 우클릭하여 '이미지 복사'를 이용해 주세요.");
     }
   };
+
+  const safeResult = finalResult && RESULTS[finalResult] ? RESULTS[finalResult] : RESULTS["TOURIST"];
+  const bestMatch = safeResult?.best && RESULTS[safeResult.best] ? RESULTS[safeResult.best] : null;
+  const worstMatch = safeResult?.worst && RESULTS[safeResult.worst] ? RESULTS[safeResult.worst] : null;
 
   return (
     <div className="min-h-screen bg-[#fcfcfc] flex items-center justify-center p-4 font-sans text-slate-900 overflow-x-hidden">
@@ -158,6 +164,8 @@ function App() {
             animate="animate"
             exit="exit"
             transition={pageTransition}
+            // 🚨 핵심 포인트: 이전 애니메이션이 완벽히 끝나고 다음 질문 카드가 눈앞에 안착했을 때만 잠금을 해제합니다.
+            onAnimationComplete={() => setIsSubmitting(false)}
             className="w-full max-w-sm bg-white rounded-[2.5rem] shadow-2xl p-8 border border-slate-50"
           >
             <div className="text-center font-black text-2xl text-[#ff6b6b] mb-2">
@@ -208,7 +216,7 @@ function App() {
         )}
 
         {/* 4. 결과 페이지 */}
-        {stage === 'result' && finalResult && (
+        {stage === 'result' && (
           <motion.div 
             key="result" 
             variants={pageVariants}
@@ -220,32 +228,32 @@ function App() {
           >
             <div className="w-full rounded-2xl overflow-hidden mb-5 bg-slate-50 shadow-md border border-slate-100">
               <img 
-                src={RESULTS[finalResult]?.img || "https://via.placeholder.com/400?text=Kbeugi"} 
-                alt={RESULTS[finalResult]?.name}
+                src={safeResult?.img || "https://via.placeholder.com/400?text=Kbeugi"} 
+                alt={safeResult?.name || "Kbeugi"}
                 className="w-full h-auto block"
                 onError={(e) => { 
                   e.target.style.display = 'none';
-                  e.target.parentNode.innerHTML = `<div class="w-full aspect-square flex flex-col items-center justify-center text-slate-400 font-bold bg-slate-100 gap-2"><span class="text-6xl">${RESULTS[finalResult]?.emoji || '🐢'}</span>${RESULTS[finalResult]?.name} 이미지를 찾을 수 없습니다.</div>`;
+                  e.target.parentNode.innerHTML = `<div class="w-full aspect-square flex flex-col items-center justify-center text-slate-400 font-bold bg-slate-100 gap-2"><span class="text-6xl">🐢</span>이미지를 찾을 수 없습니다.</div>`;
                 }}
               />
             </div>
             
             <div className="bg-[#fff9f9] border border-[#ff6b6b]/10 p-4 rounded-xl mb-4 text-left">
               <p className="text-[#ff6b6b] text-xs font-black mb-1">📍 추천 공부 장소</p>
-              <p className="text-slate-700 font-bold text-base">{RESULTS[finalResult]?.place}</p>
+              <p className="text-slate-700 font-bold text-base">{safeResult?.place || "도서관 라운지"}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5 mb-5">
               <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100/50 flex flex-col justify-center items-center min-h-[4.5rem]">
                 <p className="text-blue-500 text-[10px] font-black mb-1 uppercase tracking-wider">Best Match</p>
                 <p className="text-slate-700 text-xs font-bold break-keep whitespace-normal leading-tight text-center px-1">
-                  {RESULTS[RESULTS[finalResult]?.best]?.emoji} {RESULTS[RESULTS[finalResult]?.best]?.name}
+                  {bestMatch ? `${bestMatch.emoji} ${bestMatch.name}` : "⏳ 정산 중"}
                 </p>
               </div>
               <div className="bg-red-50/50 p-2.5 rounded-xl border border-red-100/50 flex flex-col justify-center items-center min-h-[4.5rem]">
                 <p className="text-red-500 text-[10px] font-black mb-1 uppercase tracking-wider">Worst Match</p>
                 <p className="text-slate-700 text-xs font-bold break-keep whitespace-normal leading-tight text-center px-1">
-                  {RESULTS[RESULTS[finalResult]?.worst]?.emoji} {RESULTS[RESULTS[finalResult]?.worst]?.name}
+                  {worstMatch ? `${worstMatch.emoji} ${worstMatch.name}` : "⏳ 정산 중"}
                 </p>
               </div>
             </div>
@@ -257,7 +265,12 @@ function App() {
               >
                 결과 이미지 복사하기
               </button>
-              <button onClick={() => window.location.reload()} className="w-full py-3 bg-slate-100 text-slate-500 rounded-xl font-bold hover:bg-slate-200 active:scale-95 transition-all text-sm">
+              <button onClick={() => {
+                setStage('landing');
+                setCurrentIdx(0);
+                setFinalResult(null);
+                setScores({ SILENT: 0, AMBIENT: 0, APPLE: 0, MARKER: 0, ALCHEMIST: 0, TOURIST: 0 });
+              }} className="w-full py-3 bg-slate-100 text-slate-500 rounded-xl font-bold hover:bg-slate-200 active:scale-95 transition-all text-sm">
                 테스트 다시 하기
               </button>
             </div>
