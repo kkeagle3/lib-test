@@ -2,9 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QUESTIONS, RESULTS } from './data';
 
+const pageVariants = {
+  initial: { opacity: 0, x: 40 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -40 }
+};
+
+const pageTransition = {
+  duration: 0.4,
+  ease: [0.25, 1, 0.5, 1]
+};
+
 function App() {
   const [stage, setStage] = useState('landing');
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false); // 🚨 광클 및 연속 터치 방지용 안전장치
   const [scores, setScores] = useState({ 
     SILENT: 0, 
     AMBIENT: 0, 
@@ -16,10 +28,15 @@ function App() {
   const [finalResult, setFinalResult] = useState(null);
 
   const handleAnswer = (weights) => {
+    // 이미 처리 중이라면 두 번째 클릭은 무시 (버그 원천 차단)
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     if (!weights) {
-      console.error("데이터 오류: weights가 정의되지 않았습니다. data.js를 확인하세요.");
+      console.error("데이터 오류: weights가 정의되지 않았습니다.");
       if (currentIdx < QUESTIONS.length - 1) {
         setCurrentIdx(prev => prev + 1);
+        setIsSubmitting(false);
       }
       return;
     }
@@ -34,8 +51,13 @@ function App() {
       return updated;
     });
 
+    // 안전한 배열 경계 검사: 질문 데이터가 실제로 있을 때만 인덱스 증가
     if (currentIdx < QUESTIONS.length - 1) {
       setCurrentIdx(prev => prev + 1);
+      // 화면이 바뀔 시간을 확보한 뒤 클릭 차단 해제
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 400);
     } else {
       setStage('loading');
     }
@@ -52,6 +74,7 @@ function App() {
         
         setFinalResult(picked);
         setStage('result');
+        setIsSubmitting(false); // 결과 페이지 진입 시 완전 초기화
       }, 2500);
       return () => clearTimeout(timer);
     }
@@ -81,17 +104,19 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfcfc] flex items-center justify-center p-4 font-sans text-slate-900">
-      {/* 이 부분의 오타를 AnimatePresence로 정상 수정했습니다 */}
+    <div className="min-h-screen bg-[#fcfcfc] flex items-center justify-center p-4 font-sans text-slate-900 overflow-x-hidden">
       <AnimatePresence mode="wait">
         
+        {/* 1. 시작 페이지 */}
         {stage === 'landing' && (
           <motion.div 
             key="landing" 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            exit={{ opacity: 0, y: -20 }} 
-            className="flex flex-col items-center text-center"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={pageTransition}
+            className="flex flex-col items-center text-center w-full max-w-sm"
           >
             <div className="w-44 h-44 mx-auto mb-6 relative flex items-center justify-center">
               <div className="absolute inset-0 bg-[#ff6b6b]/10 rounded-full blur-2xl transform -translate-y-2"></div>
@@ -109,7 +134,7 @@ function App() {
             <p className="text-slate-500 mb-10 font-medium">나의 도서관 성향은 어떨까?</p>
             <button 
               onClick={() => setStage('quiz')} 
-              className="bg-[#ff6b6b] text-white px-14 py-5 rounded-3xl font-black text-xl shadow-lg shadow-red-100 hover:brightness-105 transition-all active:scale-95 w-full max-w-[280px]"
+              className="bg-[#ff6b6b] text-white px-14 py-5 rounded-3xl font-black text-xl shadow-lg shadow-red-100 hover:brightness-105 transition-all active:scale-95 w-full"
             >
               테스트 시작하기
             </button>
@@ -119,12 +144,15 @@ function App() {
           </motion.div>
         )}
 
+        {/* 2. 질문 페이지 */}
         {stage === 'quiz' && (
           <motion.div 
             key={`quiz-${currentIdx}`} 
-            initial={{ opacity: 0, x: 50 }} 
-            animate={{ opacity: 1, x: 0 }} 
-            exit={{ opacity: 0, x: -50 }} 
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={pageTransition}
             className="w-full max-w-sm bg-white rounded-[2.5rem] shadow-2xl p-8 border border-slate-50"
           >
             <div className="text-center font-black text-2xl text-[#ff6b6b] mb-2">
@@ -138,7 +166,7 @@ function App() {
                 transition={{ duration: 0.3 }}
               />
             </div>
-            <h2 className="text-2xl font-bold mb-10 text-slate-800 text-center break-keep whitespace-pre-line">
+            <h2 className="text-2xl font-bold mb-10 text-slate-800 text-center break-keep whitespace-pre-line min-h-[4rem] flex items-center justify-center">
               {QUESTIONS[currentIdx]?.text || "질문을 불러올 수 없습니다."}
             </h2>
             <div className="space-y-3">
@@ -146,7 +174,10 @@ function App() {
                 <button 
                   key={`${currentIdx}-${i}`} 
                   onClick={() => handleAnswer(opt.weights)} 
-                  className="w-full p-5 text-left bg-white border-2 border-slate-50 rounded-2xl font-semibold shadow-sm hover:border-[#ff6b6b] hover:bg-[#fff9f9] transition-all active:scale-95 text-slate-700"
+                  disabled={isSubmitting} // 🚨 처리 중일 때 물리적으로 버튼 비활성화
+                  className={`w-full p-5 text-left bg-white border-2 border-slate-50 rounded-2xl font-semibold shadow-sm transition-all text-slate-700 break-keep ${
+                    isSubmitting ? 'opacity-80 cursor-not-allowed' : 'hover:border-[#ff6b6b] hover:bg-[#fff9f9] active:scale-95'
+                  }`}
                 >
                   {opt.text}
                 </button>
@@ -155,18 +186,31 @@ function App() {
           </motion.div>
         )}
 
+        {/* 3. 로딩 페이지 */}
         {stage === 'loading' && (
-          <motion.div key="loading" className="text-center">
+          <motion.div 
+            key="loading" 
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={pageTransition}
+            className="text-center w-full max-w-sm"
+          >
             <div className="w-16 h-16 border-4 border-[#ff6b6b] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
             <p className="text-xl font-bold text-slate-600">공부 세포 분석 중...</p> 
           </motion.div>
         )}
 
+        {/* 4. 결과 페이지 */}
         {stage === 'result' && finalResult && (
           <motion.div 
             key="result" 
-            initial={{ opacity: 0, scale: 0.9 }} 
-            animate={{ opacity: 1, scale: 1 }} 
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={pageTransition}
             className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-5 text-center flex flex-col" 
           >
             <div className="w-full rounded-2xl overflow-hidden mb-5 bg-slate-50 shadow-md border border-slate-100">
@@ -186,16 +230,16 @@ function App() {
               <p className="text-slate-700 font-bold text-base">{RESULTS[finalResult]?.place}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100/50 text-center">
-                <p className="text-blue-500 text-[10px] font-black mb-1 uppercase">Best Match</p>
-                <p className="text-slate-700 text-sm font-bold truncate">
+            <div className="grid grid-cols-2 gap-2.5 mb-5">
+              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100/50 flex flex-col justify-center items-center min-h-[4.5rem]">
+                <p className="text-blue-500 text-[10px] font-black mb-1 uppercase tracking-wider">Best Match</p>
+                <p className="text-slate-700 text-xs font-bold break-keep whitespace-normal leading-tight text-center px-1">
                   {RESULTS[RESULTS[finalResult]?.best]?.emoji} {RESULTS[RESULTS[finalResult]?.best]?.name}
                 </p>
               </div>
-              <div className="bg-red-50/50 p-3 rounded-xl border border-red-100/50 text-center">
-                <p className="text-red-500 text-[10px] font-black mb-1 uppercase">Worst Match</p>
-                <p className="text-slate-700 text-sm font-bold truncate">
+              <div className="bg-red-50/50 p-2.5 rounded-xl border border-red-100/50 flex flex-col justify-center items-center min-h-[4.5rem]">
+                <p className="text-red-500 text-[10px] font-black mb-1 uppercase tracking-wider">Worst Match</p>
+                <p className="text-slate-700 text-xs font-bold break-keep whitespace-normal leading-tight text-center px-1">
                   {RESULTS[RESULTS[finalResult]?.worst]?.emoji} {RESULTS[RESULTS[finalResult]?.worst]?.name}
                 </p>
               </div>
