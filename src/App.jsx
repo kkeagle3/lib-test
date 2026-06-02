@@ -18,11 +18,11 @@ function App() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false); // 잠금 플래그
   const [scores, setScores] = useState({ 
-    SILENT: 0, 
-    AMBIENT: 0, 
-    APPLE: 0, 
-    MARKER: 0, 
-    ALCHEMIST: 0, 
+    FOCUS: 0, 
+    CAFE: 0, 
+    ZIMCARRY: 0, 
+    WITH: 0, 
+    OWL: 0, 
     TOURIST: 0 
   });
   const [finalResult, setFinalResult] = useState(null);
@@ -64,9 +64,7 @@ function App() {
         try {
           const maxScore = Math.max(...Object.values(scores));
           const candidates = Object.keys(scores).filter(key => scores[key] === maxScore);
-          
-          const priority = ["TOURIST", "APPLE", "MARKER", "ALCHEMIST", "AMBIENT", "SILENT"];
-          let picked = candidates.sort((a, b) => priority.indexOf(a) - priority.indexOf(b))[0];
+          const priority = ["TOURIST", "ZIMCARRY", "WITH", "OWL", "CAFE", "FOCUS"];          let picked = candidates.sort((a, b) => priority.indexOf(a) - priority.indexOf(b))[0];
           
           if (!picked || !RESULTS[picked]) {
             picked = "TOURIST";
