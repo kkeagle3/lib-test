@@ -16,7 +16,7 @@ const pageTransition = {
 function App() {
   const [stage, setStage] = useState('landing');
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false); // 🚨 광클 및 연속 터치 방지용 안전장치
+  const [isSubmitting, setIsSubmitting] = useState(false); // 물리적인 연타 방지 플래그
   const [scores, setScores] = useState({ 
     SILENT: 0, 
     AMBIENT: 0, 
@@ -28,19 +28,17 @@ function App() {
   const [finalResult, setFinalResult] = useState(null);
 
   const handleAnswer = (weights) => {
-    // 이미 처리 중이라면 두 번째 클릭은 무시 (버그 원천 차단)
-    if (isSubmitting) return;
+    // 1. 이미 클릭 처리 중이거나 로딩 상태로 넘어가는 중이라면 무조건 즉시 차단
+    if (isSubmitting || stage !== 'quiz') return;
     setIsSubmitting(true);
 
     if (!weights) {
       console.error("데이터 오류: weights가 정의되지 않았습니다.");
-      if (currentIdx < QUESTIONS.length - 1) {
-        setCurrentIdx(prev => prev + 1);
-        setIsSubmitting(false);
-      }
+      setIsSubmitting(false);
       return;
     }
 
+    // 2. 점수 안전하게 합산
     setScores(prev => {
       const updated = { ...prev };
       Object.entries(weights).forEach(([type, value]) => {
@@ -51,17 +49,24 @@ function App() {
       return updated;
     });
 
-    // 안전한 배열 경계 검사: 질문 데이터가 실제로 있을 때만 인덱스 증가
-    if (currentIdx < QUESTIONS.length - 1) {
-      setCurrentIdx(prev => prev + 1);
-      // 화면이 바뀔 시간을 확보한 뒤 클릭 차단 해제
-      setTimeout(() => {
-        setIsSubmitting(false);
-      }, 400);
+    // 3. 인덱스 경계값에 대한 절대적 검증 (이 부분이 구멍을 막는 핵심입니다)
+    const nextIdx = currentIdx + 1;
+    
+    if (nextIdx < QUESTIONS.length) {
+      // 다음 문항이 확실히 존재할 때만 인덱스를 안전하게 1 올림
+      setCurrentIdx(nextIdx);
     } else {
+      // 모든 문항이 끝났다면 인덱스를 절대 올리지 않고 스테이지만 로딩으로 전환
       setStage('loading');
     }
   };
+
+  // 문항(currentIdx)이 실제로 갱신이 완료되어 화면 렌더링이 보장되면 그때 클릭 잠금을 해제
+  useEffect(() => {
+    if (stage === 'quiz') {
+      setIsSubmitting(false);
+    }
+  }, [currentIdx, stage]);
 
   useEffect(() => {
     if (stage === 'loading') {
@@ -74,7 +79,7 @@ function App() {
         
         setFinalResult(picked);
         setStage('result');
-        setIsSubmitting(false); // 결과 페이지 진입 시 완전 초기화
+        setIsSubmitting(false);
       }, 2500);
       return () => clearTimeout(timer);
     }
@@ -145,7 +150,7 @@ function App() {
         )}
 
         {/* 2. 질문 페이지 */}
-        {stage === 'quiz' && (
+        {stage === 'quiz' && QUESTIONS[currentIdx] && (
           <motion.div 
             key={`quiz-${currentIdx}`} 
             variants={pageVariants}
@@ -167,16 +172,16 @@ function App() {
               />
             </div>
             <h2 className="text-2xl font-bold mb-10 text-slate-800 text-center break-keep whitespace-pre-line min-h-[4rem] flex items-center justify-center">
-              {QUESTIONS[currentIdx]?.text || "질문을 불러올 수 없습니다."}
+              {QUESTIONS[currentIdx].text}
             </h2>
             <div className="space-y-3">
-              {QUESTIONS[currentIdx]?.options.map((opt, i) => (
+              {QUESTIONS[currentIdx].options.map((opt, i) => (
                 <button 
                   key={`${currentIdx}-${i}`} 
                   onClick={() => handleAnswer(opt.weights)} 
-                  disabled={isSubmitting} // 🚨 처리 중일 때 물리적으로 버튼 비활성화
+                  disabled={isSubmitting} 
                   className={`w-full p-5 text-left bg-white border-2 border-slate-50 rounded-2xl font-semibold shadow-sm transition-all text-slate-700 break-keep ${
-                    isSubmitting ? 'opacity-80 cursor-not-allowed' : 'hover:border-[#ff6b6b] hover:bg-[#fff9f9] active:scale-95'
+                    isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:border-[#ff6b6b] hover:bg-[#fff9f9] active:scale-95'
                   }`}
                 >
                   {opt.text}
