@@ -20,7 +20,6 @@ function App() {
   const [scores, setScores] = useState({ 
     FOCUS: 0, 
     CAFE: 0, 
-    ZIMCARRY: 0, 
     WITH: 0, 
     OWL: 0, 
     TOURIST: 0 
@@ -64,7 +63,8 @@ function App() {
         try {
           const maxScore = Math.max(...Object.values(scores));
           const candidates = Object.keys(scores).filter(key => scores[key] === maxScore);
-          const priority = ["TOURIST", "ZIMCARRY", "WITH", "OWL", "CAFE", "FOCUS"];          let picked = candidates.sort((a, b) => priority.indexOf(a) - priority.indexOf(b))[0];
+          const priority = ["FOCUS", "CAFE", "WITH", "OWL", "TOURIST"];          
+          let picked = candidates.sort((a, b) => priority.indexOf(a) - priority.indexOf(b))[0];
           
           if (!picked || !RESULTS[picked]) {
             picked = "TOURIST";
@@ -134,8 +134,8 @@ function App() {
                 alt="메인 크부기"
                 className="w-full h-full object-contain relative z-10 drop-shadow-xl"
                 onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.parentNode.innerHTML = '<span class="text-6xl block">🐢</span>';
+                  e.target.onerror = null; // 무한 루프 방지
+                  e.target.src = "https://via.placeholder.com/400?text=Kbeugi"; 
                 }}
               />
             </div>
@@ -148,7 +148,7 @@ function App() {
               테스트 시작하기
             </button>
             <footer className="mt-16">
-              <p className="text-sm font-bold text-slate-400 tracking-widest">제38기 도서관학생위원회</p>
+              <p className="text-sm font-bold text-slate-400 tracking-widest">제39기 도서관학생위원회</p>
             </footer>
           </motion.div>
         )}
@@ -235,22 +235,32 @@ function App() {
                 }}
               />
             </div>
-            
+            {/* 📍 추천 공부 장소 영역 */}
             <div className="bg-[#fff9f9] border border-[#ff6b6b]/10 p-4 rounded-xl mb-4 text-left">
-              <p className="text-[#ff6b6b] text-xs font-black mb-1">📍 추천 공부 장소</p>
-              <p className="text-slate-700 font-bold text-base">{safeResult?.place || "도서관 라운지"}</p>
+              {/* text-xs -> text-sm으로 크기 증가 */}
+              <p className="text-[#ff6b6b] text-sm font-black mb-1">📍 추천 공부 장소</p>
+              {/* text-base -> text-lg로 크기 증가 */}
+              <p className="text-slate-700 font-bold text-lg">{safeResult?.place || "도서관 라운지"}</p>
             </div>
 
+            {/* 🤝 BEST / WORST 궁합 영역 */}
             <div className="grid grid-cols-2 gap-2.5 mb-5">
-              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100/50 flex flex-col justify-center items-center min-h-[4.5rem]">
-                <p className="text-blue-500 text-[10px] font-black mb-1 uppercase tracking-wider">Best Match</p>
-                <p className="text-slate-700 text-xs font-bold break-keep whitespace-normal leading-tight text-center px-1">
+              {/* 패딩(p-3) 및 최소 높이(min-h-[5rem]) 증가 */}
+              <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100/50 flex flex-col justify-center items-center min-h-[5rem]">
+                {/* text-[10px] -> text-xs로 크기 증가 */}
+                <p className="text-blue-500 text-xs font-black mb-1.5 uppercase tracking-wider">Best Match</p>
+                {/* text-xs -> text-sm으로 크기 증가 */}
+                <p className="text-slate-700 text-sm font-bold break-keep whitespace-normal leading-tight text-center px-1">
                   {bestMatch ? `${bestMatch.emoji} ${bestMatch.name}` : "⏳ 정산 중"}
                 </p>
               </div>
-              <div className="bg-red-50/50 p-2.5 rounded-xl border border-red-100/50 flex flex-col justify-center items-center min-h-[4.5rem]">
-                <p className="text-red-500 text-[10px] font-black mb-1 uppercase tracking-wider">Worst Match</p>
-                <p className="text-slate-700 text-xs font-bold break-keep whitespace-normal leading-tight text-center px-1">
+              
+              {/* 패딩(p-3) 및 최소 높이(min-h-[5rem]) 증가 */}
+              <div className="bg-red-50/50 p-3 rounded-xl border border-red-100/50 flex flex-col justify-center items-center min-h-[5rem]">
+                {/* text-[10px] -> text-xs로 크기 증가 */}
+                <p className="text-red-500 text-xs font-black mb-1.5 uppercase tracking-wider">Worst Match</p>
+                {/* text-xs -> text-sm으로 크기 증가 */}
+                <p className="text-slate-700 text-sm font-bold break-keep whitespace-normal leading-tight text-center px-1">
                   {worstMatch ? `${worstMatch.emoji} ${worstMatch.name}` : "⏳ 정산 중"}
                 </p>
               </div>
@@ -267,7 +277,7 @@ function App() {
                 setStage('landing');
                 setCurrentIdx(0);
                 setFinalResult(null);
-                setScores({ SILENT: 0, AMBIENT: 0, APPLE: 0, MARKER: 0, ALCHEMIST: 0, TOURIST: 0 });
+                setScores({ FOCUS: 0, CAFE: 0, WITH: 0, OWL: 0, TOURIST: 0 });
               }} className="w-full py-3 bg-slate-100 text-slate-500 rounded-xl font-bold hover:bg-slate-200 active:scale-95 transition-all text-sm">
                 테스트 다시 하기
               </button>
