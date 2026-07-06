@@ -56,7 +56,6 @@ function App() {
   };
 
   // 웅덩이가 생기던 구형 useEffect 잠금 해제 코드는 데드락의 원인이므로 완전히 제거했습니다.
-
   useEffect(() => {
     if (stage === 'loading') {
       const timer = setTimeout(() => {
@@ -148,7 +147,7 @@ function App() {
               테스트 시작하기
             </button>
             <footer className="mt-16">
-              <p className="text-sm font-bold text-slate-400 tracking-widest">제39기 도서관학생위원회</p>
+              <p className="text-sm font-bold text-slate-400 tracking-widest">제38기 도서관학생위원회</p>
             </footer>
           </motion.div>
         )}

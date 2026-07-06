@@ -58,49 +58,49 @@ export const QUESTIONS = [
   { 
     text: "도서관에 도착하자마자\n당신이 가장 먼저 찾는 것은?", 
     options: [
-      { text: "노트북과 전자기기를 연결할 '콘센트' 자리", weights: { CAFE: 3, WITH: 1 } },
+      { text: "노트북과 전자기기를 연결할 '콘센트' 자리", weights: { CAFE: 2, WITH: 1 } },
       { text: "최대한 구석진 곳의 '독립된' 자리", weights: { FOCUS: 2, TOURIST: 1 } }
     ] 
   },
   { 
     text: "공강 시간, 당신이\n도서관으로 향하는 진짜 이유는?", 
     options: [
-      { text: "에어컨/히터 쐬면서 편하게 한숨 자려고", weights: { TOURIST: 2, CAFE: 1 } },
+      { text: "에어컨/히터 쐬면서 편하게 한숨 자려고", weights: { TOURIST: 4, CAFE: 1 } },
       { text: "다음 수업 과제나 퀴즈를 미리 끝내려고", weights: { FOCUS: 2 } }
     ] 
   },
   { 
     text: "당신이 선호하는\n학습 공간의 분위기는?", 
     options: [
-      { text: "사방이 막힌 폐쇄석", weights: { FOCUS: 2, OWL: 1 } },
-      { text: "탁 트인 개방석", weights: { WITH: 3, CAFE: 1 } }
+      { text: "사방이 막힌 폐쇄석", weights: { FOCUS: 1, OWL: 1 } },
+      { text: "탁 트인 개방석", weights: { WITH: 2, CAFE: 1 } }
     ] 
   },
   {
     text: "나의 이상적인 공부 루틴은?",
     options: [
       { text: "남들보다 일찍 시작해서 오전 시간을 활용한다.", weights: { CAFE: 3, TOURIST: 1 } },
-      { text: "하루 일과를 끝낸 후 밤에 집중해서 마무리한다.", weights: { OWL: 2, WITH: 1 } }
+      { text: "하루 일과를 끝낸 후 밤에 집중해서 마무리한다.", weights: { OWL: 3 } }
     ]
   },
   { 
     text: "공부를 시작하려는데 주변에서 작은 대화 소리가 들린다.", 
     options: [
       { text: "집중이 흐트러져 이어폰을 끼거나 자리를 옮기고 싶다.", weights: { FOCUS: 2 } },
-      { text: "금방 익숙해져 크게 신경 쓰지 않는다", weights: { WITH: 2, CAFE: 1 } }
+      { text: "적당한 백색소음이라 생각하며 크게 신경 쓰지 않는다.", weights: { WITH: 2, CAFE: 1 } }
     ] 
   },
   { 
     text: "공부 효율이 가장\n잘 올라가는 환경은?", 
     options: [
-      { text: "아무에게도 방해받지 않고 혼자 집중하는 1인 집중 모드", weights: { FOCUS: 2, OWL: 1 } },
-      { text: "모르는 부분을 서로 질문하고 설명하며 함께 공부하는 스터디 모드", weights: { WITH: 3 } }
+      { text: "아무에게도 방해받지 않고 혼자 집중하는 1인 집중 모드", weights: { FOCUS: 2 } },
+      { text: "친구들과 지식을 나누며 시너지를 내는 스터디 모드", weights: { WITH: 3 } }
     ] 
   },
   { 
     text: "도서관에서 가장 행복한 순간은?", 
     options: [
-      { text: "계획했던 공부 분량을 '완독'했을 때", weights: { OWL: 2, FOCUS: 1 } },
+      { text: "계획했던 공부 분량을 '완독'했을 때", weights: { OWL: 2 } },
       { text: "잠깐 나가서 친구랑 커피 마시는 시간", weights: { TOURIST: 2, WITH: 2 } }
     ] 
   },
@@ -108,13 +108,13 @@ export const QUESTIONS = [
     text: "공부하다 배가 고파지면 당신은?", 
     options: [
       { text: "흐름이 끊기기 전에 빨리 먹고 복귀한다", weights: { OWL: 2 } },
-      { text: "맛집을 찾아 학교 밖으로 나가는 게 진정한 휴식", weights: { TOURIST: 2, CAFE: 1 } }
+      { text: "맛집을 찾아 학교 밖으로 나가는 게 진정한 휴식", weights: { TOURIST: 2, CAFE: 2 } }
     ] 
   },
   { 
     text: "시험 3일 전, 당신의 상태는?", 
     options: [
-      { text: "평소와 다름없는 루틴을 유지한다", weights: { CAFE: 2, WITH: 1 } }, 
+      { text: "평소와 다름없는 루틴을 유지한다", weights: { WITH: 2, CAFE: 2 } }, 
       { text: "도서관이 집이고 집이 도서관이 된다", weights: { OWL: 3 } }
     ] 
   },
@@ -128,8 +128,8 @@ export const QUESTIONS = [
   { 
     text: "오늘 공부가 유독 안 된다면?", 
     options: [
-      { text: "카페인을 때려 붓고 어떻게든 앉아 있는다", weights: { OWL: 2 } },
-      { text: "이미 뇌가 굳었다. 쾌적함을 즐기다 조기 퇴근", weights: { TOURIST: 3 } }
+      { text: "카페인을 때려 붓고 어떻게든 앉아 있는다", weights: { FOCUS: 2, OWL: 1 } },
+      { text: "이미 뇌가 굳었다. 쾌적함을 즐기다 조기 퇴근", weights: { TOURIST: 3, WITH: 1 } }
     ] 
   }
 ];
